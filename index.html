@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 编程工具竞品分析与团队采购成本报表</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--ink:#1a2332;--mut:#5b6472;--line:#e3e7ee;--acc:#2563eb;--acc2:#7c3aed;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--chip:#eef2f7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+header{padding:28px 0 8px}
+h1{font-size:24px;font-weight:700}
+.meta{color:var(--mut);font-size:13px;margin-top:6px}
+.meta b{color:var(--ink)}
+.tabs{display:flex;gap:6px;margin:18px 0 20px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.tabs button{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--mut)}
+.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+.view{display:none}.view.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:17px;margin-bottom:10px}
+.card h3{font-size:15px;margin:12px 0 6px}
+.mut{color:var(--mut);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.kpi .v{font-size:22px;font-weight:700;color:var(--acc)}
+.kpi .l{font-size:12px;color:var(--mut);margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--chip);font-weight:600;cursor:pointer;white-space:nowrap}
+th.nosort{cursor:default}
+tr.grp td{background:#fafbfd}
+.chip{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:var(--chip);color:var(--mut)}
+.chip.full{background:#dcfce7;color:#15803d}.chip.partial{background:#fef3c7;color:#b45309}.chip.none{background:#fee2e2;color:#b91c1c}
+.chip.ent{background:#ede9fe;color:#6d28d9}.chip.unknown{background:#f1f5f9;color:#64748b}.chip.na{background:#f1f5f9;color:#64748b}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.filters select,.filters input{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13.5px;background:#fff}
+.btn{display:inline-block;border:1px solid var(--acc);color:#fff;background:var(--acc);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13.5px;text-decoration:none}
+.btn.ghost{background:#fff;color:var(--acc)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.det{font-size:12.5px;color:var(--mut);margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+a{color:var(--acc)}
+.bar{height:14px;background:#e8edf5;border-radius:7px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mut);margin:8px 0;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.quick button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13.5px}
+.quick button.on{border-color:var(--acc);background:#eff6ff;color:var(--acc);font-weight:600}
+input[type=number]{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:14px;width:110px}
+.warnbox{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:13px;color:#92400e;margin:10px 0}
+.empty{padding:26px;text-align:center;color:var(--mut);font-size:14px}
+.calcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.res td:nth-child(2){text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.footer{margin-top:28px;border-top:1px solid var(--line);padding-top:14px;font-size:12.5px;color:var(--mut)}
+details{margin:6px 0}summary{cursor:pointer;font-size:13.5px;color:var(--acc)}
+@media(max-width:640px){.kpis{grid-template-columns:1fr 1fr}.tabs button{padding:7px 10px;font-size:13px}.wrap{padding:0 12px 40px}table{font-size:12.5px}th,td{padding:6px}.tscroll{overflow-x:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>AI 编程工具竞品分析与团队采购成本报表</h1>
+  <div class="meta">信息截止日期：<b id="snapDate"></b> · 币种：<b>USD（未换算，不含税）</b> · 数据来源：<b>官方定价页快照</b> · 面向读者：技术负责人</div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-v="overview" class="on">① 总览</button>
+  <button data-v="pricing">② 价格与方案对比</button>
+  <button data-v="matrix">③ 能力矩阵</button>
+  <button data-v="calc">④ 团队成本计算器</button>
+  <button data-v="conclusion">⑤ 结论与来源</button>
+</nav>
+
+<section class="view on" id="v-overview">
+  <div class="kpis" id="kpis"></div>
+  <div class="card">
+    <h2>团队基础订阅价格范围（月付，USD/人/月）</h2>
+    <div class="legend"><span><i></i>口径：每款工具最便宜的可购买团队档（仅席位费，不含超额用量）</span></div>
+    <div id="teamBarChart"></div>
+  </div>
+  <div class="card">
+    <h2>主要差异</h2>
+    <table id="diffTable"><thead><tr><th>维度</th><th>差异说明</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div class="card">
+    <h2>有依据的发现</h2>
+    <ol id="findings"></ol>
+  </div>
+</section>
+
+<section class="view" id="v-pricing">
+  <div class="card">
+    <h2>筛选</h2>
+    <div class="filters">
+      <label>工具 <select id="fTool"><option value="">全部</option></select></label>
+      <label>对象 <select id="fAud"><option value="">全部</option><option>个人</option><option>团队</option></select></label>
+      <label>计费周期 <select id="fCyc"><option value="m">月付</option><option value="a">年付（折算月价）</option></select></label>
+      <span class="mut" id="prCount"></span>
+    </div>
+    <div class="tscroll">
+    <table id="prTable"><thead><tr>
+      <th data-k="tool">工具</th><th data-k="name">方案</th><th data-k="audience">对象</th>
+      <th data-k="amount">价格（USD）</th><th data-k="unit">计价方式</th><th data-k="included">包含用量 / 超额</th><th data-k="min">最低席位</th><th data-k="src">来源</th>
+    </tr></thead><tbody></tbody></table></div>
+    <p class="mut" style="margin-top:8px">口径说明：仅把「按席位/月」的固定订阅价放入价格对比与图表；按量计费、询价类方案不计入价格排序。<span id="annualNote"></span></p>
+  </div>
+</section>
+
+<section class="view" id="v-matrix">
+  <div class="card">
+    <h2>能力状态标签</h2>
+    <div class="legend" style="margin-bottom:6px">
+      <span class="chip full">官方明确支持</span><span class="chip partial">有限/部分支持</span>
+      <span class="chip ent">仅企业档</span><span class="chip none">不适用/无</span><span class="chip unknown">未找到说明</span>
+    </div>
+    <p class="mut">未知 ≠ 不支持：标「未找到说明」表示快照页面未提及，需向厂商核实。</p>
+  </div>
+  <div class="card">
+    <div class="tscroll"><table id="mxTable"><thead><tr id="mxHead"></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section class="view" id="v-calc">
+  <div class="card">
+    <h2>输入</h2>
+    <div class="filters">
+      <label>团队人数 <input type="number" id="cN" min="1" max="200" value="20"></label>
+      <label>计费周期 <select id="cCyc"><option value="m">月付</option><option value="a">年付</option></select></label>
+      <span class="mut">口径：基础席位订阅费，不含超额/用量费与税费</span>
+    </div>
+    <div class="quick">
+      <button data-n="5">5 人</button><button data-n="20" class="on">20 人</button><button data-n="50">50 人</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>计算结果（可展开计算过程）</h2>
+    <div class="tscroll"><table class="res" id="calcTable"><thead><tr>
+      <th>工具 / 团队方案</th><th>月度成本</th><th>年度成本</th><th>年付应付</th><th>vs 最便宜（年）</th><th>备注</th>
+    </tr></thead><tbody></tbody></table></div>
+    <details><summary>计算过程与规则</summary><div id="calcHow" class="det" style="font-size:13px"></div></details>
+    <div class="warnbox" id="calcWarn"></div>
+  </div>
+</section>
+
+<section class="view" id="v-conclusion">
+  <div id="recs"></div>
+  <div class="card">
+    <h2>数据下载（与本页面同一数据源）</h2>
+    <a class="btn ghost" id="dlJson" href="#" download="ai-coding-tools-data.json">下载 JSON</a>
+    <a class="btn ghost" id="dlCsv" href="#" download="ai-coding-tools-data.csv" style="margin-left:8px">下载 CSV</a>
+    <p class="mut" style="margin-top:8px">下载数据由页面内嵌的同一份结构化快照生成，与表格、计算器口径一致。</p>
+  </div>
+  <div class="card">
+    <h2>完整来源列表</h2>
+    <table id="srcTable"><thead><tr><th>#</th><th>页面标题</th><th>URL</th><th>访问日期</th><th>发布日期</th></tr></thead><tbody></tbody></table>
+    <p class="mut" style="margin-top:6px">未标注发布日期的页面保存为「未标注」，不做推测。</p>
+  </div>
+  <div class="card">
+    <h2>关键数据缺口</h2>
+    <ul id="gaps" class="mut" style="padding-left:18px;font-size:13.5px"></ul>
+  </div>
+</section>
+
+<footer class="footer">
+  本报表为 2026-09-27 的调研快照，价格与政策以厂商官网实时为准；所有结论基于公开页面，未包含任何虚构数据。
+</footer>
+</div>
+<script src="data.js"></script>
+<script>
+const $=s=>document.querySelector(s), R=REPORT, fmt=v=>v==null?"—":("$"+(v%1?v.toFixed(2):v.toLocaleString("en-US")));
+const STATUS={full:["官方明确支持","full"],partial:["有限支持","partial"],ent:["仅企业档","ent"],none:["不适用/无","none"],unknown:["未找到说明","unknown"],na:["—","na"]};
+
+/* Tabs */
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));$("#v-"+b.dataset.v).classList.add("on");
+});
+$("#snapDate").textContent=R.meta.snapshotDate;
+
+/* ---- Overview ---- */
+function teamPlans(){ // cheapest purchasable monthly team plan per tool (per-seat basis)
+  return R.tools.map(t=>{
+    const ps=t.plans.filter(p=>p.audience==="团队"&&p.purchasable!==false&&p.monthly!=null&&!p.inquiry);
+    ps.sort((a,b)=>a.monthly-b.monthly);
+    return ps[0]?{t,p:ps[0]}:null;
+  }).filter(Boolean);
+}
+(function overview(){
+  const tp=teamPlans(), prices=tp.map(x=>x.p.monthly);
+  const kpis=[
+    {v:"6 款",l:"覆盖工具（均为官方页面核实）"},
+    {v:"$"+Math.min(...prices)+"–$"+Math.max(...prices),l:"团队档月价范围（USD/人/月）"},
+    {v:"2 类",l:"计费模式：固定席位 vs 席位+用量"},
+    {v:"1 项",l:"重大采购约束（Pro 档停新购）"},
+  ];
+  $("#kpis").innerHTML=kpis.map(k=>`<div class="kpi"><div class="v">${k.v}</div><div class="l">${k.l}</div></div>`).join("");
+  const max=Math.max(...prices);
+  $("#teamBarChart").innerHTML=tp.map(({t,p})=>`
+    <div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${t.name} · ${p.name}</span><b>${fmt(p.monthly)}/人/月</b></div>
+    <div class="bar"><i style="width:${(p.monthly/max*100).toFixed(1)}%"></i></div></div>`).join("");
+  const diffs=[
+    ["产品形态","Cursor/Windsurf 为 AI 原生 IDE；Copilot/Gemini 为 IDE 插件生态；Claude Code/Codex 为终端与云 Agent 形态，无传统内联补全"],
+    ["计费模式","固定席位订阅：Cursor、Copilot、Gemini、Windsurf；混合（席位+API 用量）：Claude Team/Enterprise、Windsurf 超额"],
+    ["年付折扣","Gemini 约 17%（$22.80→$19）；Claude Pro/Team 有明确年付价；Cursor/Copilot/Windsurf 年付价未公开→不能假设有折扣"],
+    ["治理能力","Copilot Enterprise/Claude Enterprise 有明确 SSO/审计承诺；多款工具的企业档细节需询价核实"],
+    ["采购约束","ChatGPT Pro $200 已暂停新注册（2026-09-10）；Windsurf 合同主体变为 Cognition"],
+  ];
+  $("#diffTable").tBodies[0].innerHTML=diffs.map(d=>`<tr><td><b>${d[0]}</b></td><td>${d[1]}</td></tr>`).join("");
+  $("#findings").innerHTML=R.findings.map(f=>`<li>${f.text}</li>`).join("");
+})();
+
+/* ---- Pricing view ---- */
+function allPlans(){
+  const rows=[];
+  R.tools.forEach(t=>t.plans.forEach(p=>{
+    if(p.inquiry||p.monthly==null)return;
+    rows.push({tool:t.name,toolId:t.id,name:p.name,audience:p.audience,
+      amount:p.monthly,cyc:"m",unit:p.perSeat||p.audience==="团队"?"按席位/月":"按账户/月",
+      included:p.included+(p.overage?`<br>超额：${p.overage}`:""),
+      min:p.minSeats==null?"未公开":p.minSeats,src:p.src,note:p.note||p.annualNote||"",
+      annualMonthly:p.annualMonthly,annualNote:p.annualNote||""});
+    if(p.annualMonthly!=null)rows.push({...rows[rows.length-1],amount:p.annualMonthly,cyc:"a",
+      unit:`年付折算（${p.annualNote||"按年承诺"}）`});
+  }));
+  return rows;
+}
+let sortKey="tool",sortAsc=true;
+(function pricing(){
+  const ft=$("#fTool");R.tools.forEach(t=>ft.add(new Option(t.name,t.id)));
+  const cyc=$("#fCyc"),aud=$("#fAud"),tb=$("#prTable tbody");
+  function render(){
+    const sel={t:ft.value,a:aud.value,c:cyc.value};
+    let rows=allPlans().filter(r=>(!sel.t||r.toolId===sel.t)&&(!sel.a||r.audience===sel.a)&&(!sel.c||r.cyc===sel.c));
+    rows.sort((x,y)=>{const a=x[sortKey],b=y[sortKey];
+      const cmp=(typeof a==="number"&&typeof b==="number")?a-b:String(a).localeCompare(String(b),"zh");
+      return sortAsc?cmp:-cmp;});
+    tb.innerHTML=rows.length?rows.map(r=>`<tr><td>${r.tool}</td><td><b>${r.name}</b>${r.note?`<div class="det">${r.note}</div>`:""}</td>
+      <td>${r.audience}</td><td><b>${fmt(r.amount)}</b></td><td>${r.unit}</td><td>${r.included}</td><td>${r.min}</td>
+      <td><a href="${R.sources[r.src].url}" target="_blank" rel="noopener">官方页</a></td></tr>`).join("")
+      :`<tr><td colspan="8" class="empty">没有符合筛选条件的数据——请放宽工具/对象/周期筛选。</td></tr>`;
+    $("#prCount").textContent=`共 ${rows.length} 条`;
+    $("#annualNote").innerHTML=sel.c==="a"?"（年付列按官方标注的年付价折算为月价展示，与月付价分行展示）":"";
+  }
+  ft.onchange=aud.onchange=cyc.onchange=render;
+  document.querySelectorAll("#prTable th").forEach(th=>th.onclick=()=>{
+    if(th.classList.contains("nosort"))return;const k=th.dataset.k;
+    sortAsc=(k===sortKey)?!sortAsc:true;sortKey=k;render();});
+  render();
+})();
+
+/* ---- Capability matrix ---- */
+(function matrix(){
+  const dims=[["completion","代码补全"],["repoUnderstanding","仓库理解"],["multiFile","多文件修改"],
+    ["terminal","终端执行"],["review","代码审查"],["cloudAgent","云端 Agent"],
+    ["sso","SSO/SCIM"],["audit","审计日志"],["privacyMode","不训练承诺"],["adminDashboard","管理后台"]];
+  $("#mxHead").innerHTML=`<th>工具</th>`+dims.map(d=>`<th class="nosort">${d[1]}</th>`).join("");
+  const tb=$("#mxTable tbody");
+  tb.innerHTML=R.tools.map(t=>`<tr><td><b>${t.name}</b></td>`+dims.map(d=>{
+    const c=t.capabilities[d[0]]||t.admin[d[0]]||{s:"unknown",note:"未找到说明"};
+    const m=STATUS[c.s]||STATUS.unknown;
+    return `<td><span class="chip ${m[1]}" title="${c.note}">${m[0]}</span><div class="det">${c.note||""}</div></td>`;
+  }).join("")+`</tr>`).join("");
+})();
+
+/* ---- Calculator ---- */
+(function calc(){
+  const n=$("#cN"),cyc=$("#cCyc"),tb=$("#calcTable tbody");
+  document.querySelectorAll(".quick button").forEach(b=>b.onclick=()=>{
+    n.value=b.dataset.n;document.querySelectorAll(".quick button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");render();});
+  n.oninput=cyc.onchange=render;
+  // per-tool monthly team cost fn: returns {ok, mMonthly, mAnnualMonthly(annual-billed per-month), lines[], warn}
+  function costFor(t){
+    const c=t.calc,N=parseInt(n.value)||0;
+    if(!c||c.monthlyPrice==null&&!c.perSeat)return {ok:false,reason:"团队方案需询价或价格未公开，无法给出有效报价"};
+    const lines=[],warn=[];
+    let monthly;
+    if(c.perSeat!=null){ // windsurf style: base + per seat
+      monthly=c.monthlyPrice+c.perSeat*N;
+      lines.push(`${c.monthlyPrice}（基础费）+ ${c.perSeat}×${N} 席位 = $${monthly}`);
+      if(c.seatNote.includes("待核实")||c.seatNote.includes("未明确"))warn.push(t.name+"："+c.seatNote);
+    }else{
+      monthly=c.monthlyPrice*N;
+      lines.push(`${c.monthlyPrice} × ${N} 席位 = $${monthly}`);
+      if(c.seatNote)warn.push(t.name+"："+c.seatNote);
+    }
+    if(c.minSeats!=null&&N<c.minSeats)return {ok:false,reason:`低于最低席位要求（${c.minSeats} 席）`};
+    let annualMonthly=c.annualMonthly, note="";
+    if(annualMonthly==null){
+      note="年付价未公开：年度成本按月付×12 估算展示，非官方年付折扣";
+      lines.push(`年付：官方年付价未公开 → 按月付×12 估算 = $${monthly*12}`);
+    }else{
+      const am=cyc.value==="a"?annualMonthly:c.monthlyPrice; // annual-billed monthly rate
+      lines.push(`年付官方价 $${annualMonthly}/席/月 × 12 × ${N} 席 = $${annualMonthly*12*N}`);
+      lines.push(`月付 $${c.monthlyPrice}/席/月 × 12 × ${N} 席 = $${c.monthlyPrice*12*N}`);
+    }
+    return {ok:true,monthly,annualMonthly,note,lines,warn};
+  }
+  function render(){
+    const N=parseInt(n.value)||0,A=cyc.value==="a";
+    const results=R.tools.map(t=>({t,r:costFor(t)}));
+    const valid=results.filter(x=>x.r.ok);
+    const costOf=x=>A?(x.r.annualMonthly!=null?x.r.annualMonthly*12*N:x.r.monthly*12):x.r.monthly;
+    const base=valid.length?Math.min(...valid.map(costOf)):null;
+    tb.innerHTML=results.map(({t,r})=>{
+      if(!r.ok)return `<tr><td><b>${t.name}</b><div class="det">${t.calc&&t.calc.teamPlan?t.calc.teamPlan:"团队方案"}</div></td>
+        <td colspan="4" class="mut">需询价 / 无法报价：${r.reason}</td><td>—</td></tr>`;
+      const monthly=A&&r.annualMonthly!=null?r.annualMonthly*N:r.monthly;
+      const annual=r.annualMonthly!=null?r.annualMonthly*12*N:r.monthly*12*N;
+      const pay=A&&r.annualMonthly!=null?annual:r.monthly*12*N;
+      const diff=base!=null?annual-base:null;
+      return `<tr><td><b>${t.name}</b><div class="det">${t.calc.teamPlan}</div></td>
+        <td>${fmt(monthly)}</td><td>${fmt(annual)}</td>
+        <td>${A?(r.annualMonthly!=null?fmt(pay)+"（年付价，预付）":`<span class="chip partial">按月付累计 ${fmt(pay)}</span>`):"按月支付"}</td>
+        <td>${diff==null?"—":(diff===0?"基准（最低）":fmt(diff))}</td>
+        <td class="mut">${r.note||""}</td></tr>`}).join("");
+    $("#calcHow").innerHTML=results.map(({t,r})=>`<p><b>${t.name}</b>${r.ok?
+      `（${t.calc.teamPlan}）：`+r.lines.map(l=>`<br>· ${l}`).join("")
+      :`：${r.reason}`}</p>`).join("");
+    const warns=[];
+    results.forEach(x=>x.r.ok&&x.r.warn.forEach(w=>warns.push(w)));
+    warns.push("所有工具：本计算器仅计基础席位订阅费；Claude（Team/Enterprise）与 Windsurf 超额、Cursor/Copilot 按量部分均另计，无法在无用量假设下预测。");
+    warns.push("币种为 USD 官方标价，未做汇率换算、不含税。");
+    if(A)warns.push("年付口径：有官方年付价的工具展示年付应付金额并标注预付；未公开年付价的按月付×12 估算，不能视为官方折扣。");
+    $("#calcWarn").innerHTML="<b>口径与提示</b><br>· "+warns.join("<br>· ");
+  }
+  render();
+})();
+
+/* ---- Conclusion ---- */
+(function conclusion(){
+  const seq=["individual","smallTeam","governedTeam"];
+  $("#recs").innerHTML=seq.map(k=>{const r=R.recommendations[k];return `
+  <div class="card"><h2>${r.title}</h2><p style="font-size:14.5px">${r.body}</p>
+  <h3>适用条件</h3><ul style="padding-left:18px;font-size:13.5px">${r.conditions.map(c=>`<li>${c}</li>`).join("")}</ul>
+  <h3>仍需验证</h3><ul style="padding-left:18px;font-size:13.5px">${r.verify.map(c=>`<li>${c}</li>`).join("")}</ul></div>`}).join("");
+  const srcs=Object.entries(R.sources);
+  $("#srcTable").tBodies[0].innerHTML=srcs.map(([k,s],i)=>`<tr><td>${i+1}</td><td>${s.title}</td>
+    <td><a href="${s.url}" target="_blank" rel="noopener">${s.url}</a></td><td>${s.date}</td><td>${s.pubDate||"未标注"}</td></tr>`).join("");
+  $("#gaps").innerHTML=[
+    "Cursor：年付折扣价（页面有月/年切换，静态快照未含年付数字）、Teams Premium 具体价格",
+    "GitHub Copilot：Pro 年付 $100/年 与各档 premium 请求固定额度未在快照页核实（新口径为 GitHub AI Credits，1 credit=$0.01）",
+    "Claude Code：具体用量上限（周/5小时窗口的绝对数值）未公开数值；Free 档细节",
+    "OpenAI Codex：ChatGPT Plus 公开价（快照页未含）、Business/Enterprise/Edu 团队价、具体任务数额度",
+    "Windsurf：Teams $80 基础费包含的席位数、年付价、代码审查能力说明",
+    "Gemini Code Assist：个人免费层额度（6,000 请求/日 等说法未在本次快照页核实）、Standard 与 Enterprise 的功能差异明细、最低席位数",
+  ].map(g=>`<li>${g}</li>`).join("");
+})();
+
+/* ---- Downloads (from the same in-page data) ---- */
+(function dl(){
+  $("#dlJson").href=URL.createObjectURL(new Blob([JSON.stringify(R,null,2)],{type:"application/json"}));
+  const esc=v=>'"'+String(v==null?"":v).replace(/"/g,'""').replace(/<[^>]+>/g,"")+'"';
+  const rows=[["工具","厂商","定位","方案","对象","月付价USD","年付折算月价USD","最低席位","包含用量","超额方式","形态","最近90天变化","来源URL","访问日期"]];
+  R.tools.forEach(t=>t.plans.forEach(p=>{
+    const s=R.sources[p.src]||{};
+    rows.push([t.name,t.vendor,t.positioning,p.name,p.audience,p.monthly,p.annualMonthly,p.minSeats||"",
+      (p.included||"").replace(/<[^>]+>/g,""),p.overage||"",t.forms.join(" / "),t.recent90d.join(" | "),s.url||"",s.date||""]);
+  }));
+  $("#dlCsv").href=URL.createObjectURL(new Blob(["\ufeff"+rows.map(r=>r.map(esc).join(",")).join("\n")],{type:"text/csv"}));
+})();
+</script>
+</body>
+</html>
